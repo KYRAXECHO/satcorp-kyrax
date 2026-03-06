@@ -1,63 +1,44 @@
 <svg width="900" height="600" xmlns="http://www.w3.org/2000/svg">
-
-  <!-- Background -->
   <rect width="900" height="600" fill="#0b0f19"/>
 
-  <!-- Title -->
-  <text x="450" y="50" text-anchor="middle" font-family="Arial" font-size="26" fill="#ffffff">
+  <text x="450" y="50" text-anchor="middle"
+        font-family="Arial" font-size="26" fill="#ffffff">
     KYRAX Architecture Blueprint
   </text>
 
-  <!-- Context Mesh -->
-  <rect x="250" y="160" width="400" height="260" rx="20" ry="20"
-        fill="none" stroke="#6a89ff" stroke-width="2" stroke-dasharray="6 4"/>
+  <rect x="250" y="160" width="400" height="260"
+        rx="20" ry="20"
+        fill="none"
+        stroke="#6a89ff"
+        stroke-width="2"
+        stroke-dasharray="6 4"/>
 
-  <text x="450" y="190" text-anchor="middle" font-family="Arial" font-size="14" fill="#6a89ff">
+  <text x="450" y="190" text-anchor="middle"
+        font-family="Arial" font-size="14" fill="#6a89ff">
     Context Mesh
   </text>
-  <text x="450" y="210" text-anchor="middle" font-family="Arial" font-size="11" fill="#b0c6ff">
+  <text x="450" y="210" text-anchor="middle"
+        font-family="Arial" font-size="11" fill="#b0c6ff">
     Adaptive Memory & State Layer
   </text>
 
-  <!-- Core -->
-  <circle cx="450" cy="300" r="100" fill="none" stroke="#4fa3ff" stroke-width="4"/>
-  <circle cx="450" cy="300" r="80" fill="none" stroke="#7ad3ff" stroke-width="2"/>
+  <circle cx="450" cy="300" r="100"
+          fill="none"
+          stroke="#4fa3ff"
+          stroke-width="4"/>
 
-  <text x="450" y="295" text-anchor="middle" font-family="Arial" font-size="18" fill="#ffffff">
+  <circle cx="450" cy="300" r="80"
+          fill="none"
+          stroke="#7ad3ff"
+          stroke-width="2"/>
+
+  <text x="450" y="295" text-anchor="middle"
+        font-family="Arial" font-size="18" fill="#ffffff">
     KYRAX Core
   </text>
-  <text x="450" y="320" text-anchor="middle" font-family="Arial" font-size="12" fill="#b0c6ff">
+  <text x="450" y="320" text-anchor="middle"
+        font-family="Arial" font-size="12" fill="#b0c6ff">
     Modular AI Brain
   </text>
-
-  <!-- External Interfaces -->
-  <rect x="80" y="250" width="150" height="120" rx="15"
-        fill="none" stroke="#ffce73" stroke-width="2"/>
-  <text x="155" y="280" text-anchor="middle" font-family="Arial" font-size="12" fill="#ffce73">
-    External APIs
-  </text>
-  <text x="155" y="300" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
-    Game Systems
-  </text>
-  <text x="155" y="320" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
-    Automation
-  </text>
-
-  <line x1="230" y1="310" x2="350" y2="310" stroke="#ffce73" stroke-width="2"/>
-
-  <!-- Sentient Studio -->
-  <rect x="670" y="250" width="150" height="120" rx="15"
-        fill="none" stroke="#9bffb5" stroke-width="2"/>
-  <text x="745" y="280" text-anchor="middle" font-family="Arial" font-size="12" fill="#9bffb5">
-    Sentient Studio
-  </text>
-  <text x="745" y="300" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
-    Co-Creation
-  </text>
-  <text x="745" y="320" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
-    Narrative Engines
-  </text>
-
-  <line x1="550" y1="310" x2="670" y2="310" stroke="#9bffb5" stroke-width="2"/>
 
 </svg>
