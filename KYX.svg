@@ -1,0 +1,84 @@
+<svg width="900" height="600" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background -->
+  <rect width="900" height="600" fill="#0b0f19"/>
+
+  <!-- Title -->
+  <text x="450" y="50" text-anchor="middle" font-family="Arial" font-size="26" fill="#ffffff">
+    KYRAX Architecture Blueprint
+  </text>
+
+  <!-- Central Core -->
+  <circle cx="450" cy="300" r="110" fill="none" stroke="#4fa3ff" stroke-width="4"/>
+  <circle cx="450" cy="300" r="90" fill="none" stroke="#7ad3ff" stroke-width="2"/>
+
+  <text x="450" y="295" text-anchor="middle" font-family="Arial" font-size="18" fill="#ffffff">
+    KYRAX Core
+  </text>
+  <text x="450" y="320" text-anchor="middle" font-family="Arial" font-size="12" fill="#b0c6ff">
+    Modular AI Brain
+  </text>
+
+  <!-- Context Mesh -->
+  <rect x="280" y="190" width="340" height="220" rx="20" ry="20"
+        fill="none" stroke="#6a89ff" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="450" y="205" text-anchor="middle" font-family="Arial" font-size="14" fill="#6a89ff">
+    Context Mesh
+  </text>
+  <text x="450" y="225" text-anchor="middle" font-family="Arial" font-size="11" fill="#b0c6ff">
+    Adaptive Memory & State Layer
+  </text>
+
+  <!-- Signal Fabric -->
+  <path d="M450 190 L450 90" stroke="#ff7b5f" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="455" y="120" font-family="Arial" font-size="12" fill="#ffb199">
+    Signal Fabric
+  </text>
+
+  <!-- External Interfaces -->
+  <rect x="100" y="240" width="140" height="120" rx="15" fill="none" stroke="#ffce73" stroke-width="2"/>
+  <text x="170" y="270" text-anchor="middle" font-family="Arial" font-size="12" fill="#ffce73">
+    External APIs
+  </text>
+  <text x="170" y="290" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
+    Game Systems
+  </text>
+  <text x="170" y="310" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
+    Automation
+  </text>
+
+  <path d="M240 300 L340 300" stroke="#ffce73" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="660" y="240" width="140" height="120" rx="15" fill="none" stroke="#9bffb5" stroke-width="2"/>
+  <text x="730" y="270" text-anchor="middle" font-family="Arial" font-size="12" fill="#9bffb5">
+    Sentient Studio
+  </text>
+  <text x="730" y="290" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
+    Co-Creation Layer
+  </text>
+  <text x="730" y="310" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
+    Narrative Engines
+  </text>
+
+  <path d="M560 300 L660 300" stroke="#9bffb5" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Arrow Definition -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="3"
+      orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#ffffff"/>
+    </marker>
+  </defs>
+
+  <!-- Labels -->
+  <text x="170" y="390" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
+    API ↔ KYRAX
+  </text>
+  <text x="450" y="460" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
+    Context Mesh ↔ State
+  </text>
+  <text x="730" y="390" text-anchor="middle" font-family="Arial" font-size="10" fill="#ffffff">
+    Co-Creation
+  </text>
+
+</svg>
