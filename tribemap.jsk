@@ -1,0 +1,266 @@
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+
+// ─── DATA & UTILS ────────────────────────────────────────────────────────────
+const TRIBES = [
+  { id:"T001", name:"Tribe 01",  players:6, daysOld:45, verified:true,  color:"#4DA6FF", base:{ location:"67.2, 42.1", map:"Map 1" }, basePublic:true  },
+  { id:"T002", name:"Tribe 02",  players:5, daysOld:38, verified:true,  color:"#FF4D4D", base:{ location:"12.8, 88.3", map:"Map 2" }, basePublic:true  },
+  { id:"T003", name:"Tribe 03",  players:4, daysOld:62, verified:true,  color:"#B07CFF", base:{ location:"45.0, 55.0", map:"Map 1" }, basePublic:false },
+  { id:"T004", name:"Tribe 04",  players:7, daysOld:90, verified:true,  color:"#FF8C42", base:{ location:"22.4, 71.9", map:"Map 3" }, basePublic:true  },
+  { id:"T005", name:"Tribe 05",  players:3, daysOld:20, verified:true,  color:"#FFB347", base:{ location:"81.1, 34.6", map:"Map 4" }, basePublic:true  },
+  { id:"T006", name:"Tribe 06",  players:5, daysOld:55, verified:true,  color:"#5FD99F", base:{ location:"33.9, 60.2", map:"Map 1" }, basePublic:true  },
+  { id:"T007", name:"Tribe 07",  players:4, daysOld:33, verified:false, color:"#9AA7B8", base:null,                                   basePublic:false },
+  { id:"T008", name:"Tribe 08",  players:6, daysOld:71, verified:true,  color:"#E8C547", base:{ location:"55.5, 29.7", map:"Map 5" }, basePublic:true  },
+  { id:"T009", name:"Tribe 09",  players:2, daysOld:40, verified:true,  color:"#8FA8E8", base:{ location:"44.0, 50.0", map:"Map 6" }, basePublic:false },
+  { id:"T010", name:"Tribe 10",  players:1, daysOld:10, verified:false, color:"#6B7785", base:null,                                   basePublic:false },
+];
+
+const INIT_RELATIONS = [
+  { a:"T001", b:"T003", type:"alliance" },
+  { a:"T001", b:"T006", type:"alliance" },
+  { a:"T003", b:"T006", type:"alliance" },
+  { a:"T002", b:"T004", type:"alliance" },
+  { a:"T001", b:"T008", type:"friend"   },
+  { a:"T006", b:"T005", type:"friend"   },
+  { a:"T001", b:"T002", type:"enemy"    },
+  { a:"T008", b:"T002", type:"enemy"    },
+  { a:"T004", b:"T003", type:"war"      },
+];
+
+const CLUSTERS = [
+  { id:"CA", label:"ALLIANCE A", members:["T001","T003","T006"], cx:215, cy:300, rx:150, ry:135, color:"#4DA6FF" },
+  { id:"CB", label:"ALLIANCE B", members:["T002","T004"],        cx:685, cy:205, rx:122, ry:105, color:"#FF4D4D" },
+];
+
+const RCFG = {
+  alliance: { color:"#4DA6FF", dash:null,   label:"ALLIED",   w:2.4, flow:true  },
+  friend:   { color:"#7CC4FF", dash:"8,5",  label:"FRIENDLY", w:1.6, flow:true  },
+  enemy:    { color:"#FF4D4D", dash:null,   label:"HOSTILE",  w:2               },
+  war:      { color:"#FF1A1A", dash:"10,5", label:"ENGAGED",  w:3,   arrows:true, pulse:true },
+  neutral:  { color:"#4A5560", dash:"3,7",  label:"UNKNOWN",  w:1               },
+};
+
+const W=900, H=580;
+const OLIVE="#5B6B3F", SAND="#C8B68E", INK="#0B0E09", PANEL="#11150D", LINE="#2A3322";
+const AMBER="#FFB000", GREEN="#73D13D";
+
+const visible  = t => t.players>=3 || t.daysOld>30;
+const nodeR    = t => 20 + (t.daysOld>30?4:0);
+const initials = n => { const m=n.match(/\d+$/); return m?m[0]:n.split(" ").map(w=>w[0]).join("").slice(0,3); };
+const clusterOf = id => CLUSTERS.find(c=>c.members.includes(id));
+
+// ─── INTELLIGENCE FUNCTIONS ──────────────────────────────────────────────────
+function calculateDominance(tribeId, relations) {
+  const tribe = TRIBES.find(t => t.id === tribeId);
+  let score = tribe.players * 2 + tribe.daysOld * 0.15 + (tribe.verified ? 10 : 0);
+  relations.forEach(r => {
+    if (r.a === tribeId || r.b === tribeId) {
+      if (r.type === "alliance") score += 5;
+      if (r.type === "friend") score += 2;
+      if (r.type === "enemy") score -= 3;
+      if (r.type === "war") score -= 6;
+    }
+  });
+  return Math.round(score);
+}
+
+function readinessStatus(id, relations) {
+  let wars = 0; let enemies = 0;
+  relations.forEach(r => {
+    if (r.a === id || r.b === id) {
+      if (r.type === "war") wars++;
+      if (r.type === "enemy") enemies++;
+    }
+  });
+  if (wars >= 2) return "RED";
+  if (wars === 1) return "AMBER";
+  if (enemies > 0) return "YELLOW";
+  return "GREEN";
+}
+
+function influenceScore(tribe) { return (tribe.players * 10 + tribe.daysOld * 0.5 + (tribe.verified ? 25 : 0)); }
+function threatScore(id, relations){
+  let s=0;
+  relations.forEach(r=>{ if(r.a===id||r.b===id){
+    if(r.type==="war")s+=3; if(r.type==="enemy")s+=1.5; if(r.type==="alliance")s-=1; }});
+  return s;
+}
+
+function allianceGroup(startId, relations) {
+  const g=new Set([startId]); let ch=true;
+  while(ch){ ch=false; relations.forEach(r=>{
+    if(r.type!=="alliance") return;
+    if(g.has(r.a)&&!g.has(r.b)){g.add(r.b);ch=true;}
+    if(g.has(r.b)&&!g.has(r.a)){g.add(r.a);ch=true;}
+  });}
+  return [...g];
+}
+
+function calcAlliancePower(ids) { return TRIBES.filter(t=>ids.includes(t.id)).reduce((s,t)=>s+t.players,0); }
+function calcMapData(ids){
+  const m={};
+  ids.forEach(id=>{ const t=TRIBES.find(tt=>tt.id===id);
+    if(t?.base?.map) m[t.base.map]=(m[t.base.map]||0)+1; });
+  return m;
+}
+
+function calcServerRanking(focusMembers, relations){
+  const seen=new Set(); const alliances=[];
+  TRIBES.filter(visible).forEach(t=>{
+    if(seen.has(t.id)) return;
+    const g=allianceGroup(t.id,relations);
+    const key=[...g].sort().join(",");
+    if(!alliances.find(a=>a.key===key)) alliances.push({key,members:g});
+    g.forEach(id=>seen.add(id));
+  });
+  const focusKey=[...focusMembers].sort().join(",");
+  const focusMaps=calcMapData(focusMembers);
+  const out={};
+  Object.keys(focusMaps).forEach(map=>{
+    const comp=alliances.map(a=>({
+      key:a.key, isFocus:a.key===focusKey,
+      bases:calcMapData(a.members)[map]||0,
+    })).filter(a=>a.bases>0).sort((a,b)=>b.bases-a.bases);
+    out[map]={ rank:comp.findIndex(a=>a.isFocus)+1, total:comp.length,
+      ourBases:focusMaps[map], competing:comp };
+  });
+  return out;
+}
+
+function buildPositions(){
+  const vis=TRIBES.filter(visible); const pos={};
+  vis.forEach(t=>{
+    const c=clusterOf(t.id);
+    if(c){
+      const i=c.members.indexOf(t.id);
+      const a=(i/c.members.length)*Math.PI*2-Math.PI/2;
+      pos[t.id]={x:c.cx+Math.cos(a)*Math.min(c.rx,c.ry)*.6, y:c.cy+Math.sin(a)*Math.min(c.rx,c.ry)*.6};
+    } else {
+      const free=vis.filter(t2=>!clusterOf(t2.id));
+      const fi=free.indexOf(t);
+      const a=(fi/Math.max(free.length,1))*Math.PI*1.4+.1;
+      pos[t.id]={x:530+Math.cos(a)*250, y:420+Math.sin(a)*125};
+    }
+  });
+  relax(pos,vis,300);
+  return pos;
+}
+
+function relax(pos,vis,iters){
+  for(let i=0;i<iters;i++){
+    for(let a=0;a<vis.length;a++) for(let b=a+1;b<vis.length;b++){
+      const pa=pos[vis[a].id],pb=pos[vis[b].id];
+      const dx=pb.x-pa.x,dy=pb.y-pa.y,dist=Math.hypot(dx,dy)||.001;
+      const min=nodeR(vis[a])+nodeR(vis[b])+14;
+      if(dist<min){ const push=(min-dist)/2,ux=dx/dist,uy=dy/dist;
+        pa.x-=ux*push;pa.y-=uy*push;pb.x+=ux*push;pb.y+=uy*push; }
+    }
+    vis.forEach(t=>{ const p=pos[t.id],r=nodeR(t);
+      p.x=Math.max(r+18,Math.min(W-r-18,p.x));
+      p.y=Math.max(r+24,Math.min(H-r-34,p.y)); });
+  }
+}
+
+function sector(p){
+  const col=String.fromCharCode(65+Math.min(9,Math.floor(p.x/(W/10))));
+  const row=Math.min(8,Math.floor(p.y/(H/8))+1);
+  return `${col}${row}`;
+}
+
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
+export default function TribeMap(){
+  const [relations,setRelations]=useState(INIT_RELATIONS);
+  const [panel,setPanel]=useState(null);
+  const [hovered,setHovered]=useState(null);
+  const [filterRel,setFilterRel]=useState("all");
+  const [shockwaves,setShockwaves]=useState([]);
+  const [events,setEvents] = useState([{time:"14:22",type:"INTEL",text:"Recon network online"}]);
+  const [,rerender]=useState(0);
+  
+  const posRef=useRef(buildPositions());
+  const dragRef=useRef(null);
+  const svgRef=useRef(null);
+
+  const totalInfluence = TRIBES.reduce((a,t)=>a+influenceScore(t),0);
+  const topThreats = [...TRIBES].sort((a,b)=>threatScore(b.id,relations) - threatScore(a.id,relations)).slice(0,3);
+
+  const setRel=(a,b,type)=>{
+    setRelations(prev=>{
+      const f=prev.filter(r=>!((r.a===a&&r.b===b)||(r.a===b&&r.b===a)));
+      return type==="none"?f:[...f,{a,b,type}];
+    });
+    setEvents(prev => [{time:new Date().toLocaleTimeString(),type:type.toUpperCase(),text:`${a} -> ${b}`}, ...prev.slice(0,24)]);
+    if(type==="war"){
+      const pa=posRef.current[a],pb=posRef.current[b];
+      if(pa&&pb) setShockwaves(sw=>[...sw,{x:(pa.x+pb.x)/2,y:(pa.y+pb.y)/2,start:performance.now()}]);
+    }
+  };
+
+  const vis=TRIBES.filter(visible);
+  const pos=posRef.current;
+
+  const StaticGrid = useMemo(() => (
+    <g id="mgrs-grid">
+      {Array.from({length:9},(_,i)=>(<line key={`v${i}`} x1={(i+1)*W/10} y1={0} x2={(i+1)*W/10} y2={H} stroke={LINE} strokeWidth=".75" opacity=".6"/>))}
+      {Array.from({length:7},(_,i)=>(<line key={`h${i}`} x1={0} y1={(i+1)*H/8} x2={W} y2={(i+1)*H/8} stroke={LINE} strokeWidth=".75" opacity=".6"/>))}
+    </g>
+  ), []);
+
+  return (
+    <div style={{height:"100vh",display:"flex",flexDirection:"column",background:INK,color:SAND,fontFamily:"'Share Tech Mono',monospace",overflow:"hidden"}}>
+      <div style={{background:OLIVE,color:INK,textAlign:"center",fontSize:9,letterSpacing:".35em",fontWeight:700,padding:"3px 0"}}>DYSUN'S REALM — TACTICAL DIPLOMACY OVERLAY</div>
+
+      <div style={{display:"flex",alignItems:"stretch",borderBottom:`2px solid ${LINE}`,background:PANEL}}>
+        <div style={{padding:"8px 16px",borderRight:`1px solid ${LINE}`,display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:10,height:10,background:GREEN,clipPath:"polygon(50% 0,100% 50%,50% 100%,0 50%)"}}/>
+          <div>
+            <div style={{fontSize:12,fontWeight:700,fontFamily:"'Saira Condensed'"}}>TRIBE MAP // OPCENTER</div>
+          </div>
+        </div>
+        
+        {/* Threat Dashboard */}
+        <div style={{padding:"8px 14px",borderLeft:`1px solid ${LINE}`}}>
+          <div style={{fontSize:8,letterSpacing:".18em",color:"#6B7558"}}>PRIMARY THREATS</div>
+          {topThreats.map(t=>(<div key={t.id} style={{fontSize:9,color:"#FF4D4D"}}>{t.name}</div>))}
+        </div>
+
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",borderLeft:`1px solid ${LINE}`}}>
+          {["all","alliance","friend","enemy","war"].map(f=>(
+            <button key={f} onClick={()=>setFilterRel(f)} style={{padding:"0 12px",height:"100%",background:filterRel===f?(RCFG[f]?.color||OLIVE):"transparent",color:filterRel===f?INK:"#6B7558",border:"none",borderRight:`1px solid ${LINE}`,cursor:"pointer"}}>{f.toUpperCase()}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Command Feed */}
+      <div style={{height:28,display:"flex",alignItems:"center",overflow:"hidden",background:"#0D110A",borderBottom:`1px solid ${LINE}`}}>
+        <div style={{whiteSpace:"nowrap",animation:"ticker 30s linear infinite",color:"#FFB000",fontSize:9,letterSpacing:".14em"}}>
+          {events.map(e => `[${e.type}] ${e.text}   `).join("   ●   ")}
+        </div>
+      </div>
+
+      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
+        <div style={{flex:1,position:"relative"}}>
+          <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} style={{width:"100%",height:"100%",touchAction:"none",background:`radial-gradient(ellipse at 50% 45%, #131A0F 0%, ${INK} 75%)`}}>
+            {StaticGrid}
+            {vis.map(t=>{
+              const p=pos[t.id]; if(!p) return null;
+              const influencePct = Math.round(influenceScore(t) / totalInfluence * 100);
+              return (
+                <g key={t.id}>
+                  {/* ... Existing nodes ... */}
+                  <text x={p.x} y={p.y+nodeR(t)+33} textAnchor="middle" fill="#5FD99F" fontSize="7">INF {influencePct}%</text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+        {/* ... Sidebar Panel Logic ... */}
+      </div>
+
+      <style>{`
+        @keyframes ticker { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+        @keyframes flowDash { to { stroke-dashoffset: -50; } }
+        @keyframes pulseRing { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); } }
+      `}</style>
+    </div>
+  );
+}
